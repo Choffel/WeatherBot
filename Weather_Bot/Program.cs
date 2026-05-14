@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Weather_Bot.Contract;
+using Weather_Bot.Enum;
 using Weather_Bot.Service;
 
 // Попытка загрузить .env (локально) в переменные окружения, чтобы не требовать сторонних зависимостей.
@@ -54,10 +55,7 @@ var notificationService = host.Services.GetRequiredService<IMessageSender>();
 
 Console.WriteLine("--- Система мониторинга запущена ---");
 
-// 6. Логика работы
-// Отправляем приветственное сообщение
-
-await windyService.GetDrakeSummaryAsync();
+Console.WriteLine(await windyService.GetWeatherSummaryAsync(WeatherReportType.Full));
 
 await notificationService.SendAsync();
 

@@ -8,6 +8,8 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddWeatherBotServices(this IServiceCollection services)
     {
+        services.AddSingleton<IReportWeather, Report>();
+        
         services.AddHttpClient<IWeatherData, WindyService>();
 
         services.AddSingleton<IMessageSender>(sp =>
