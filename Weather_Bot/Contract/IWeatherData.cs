@@ -1,11 +1,11 @@
 ﻿using Weather_Bot.DTOs;
+using Weather_Bot.Enum;
 
 namespace Weather_Bot.Contract;
 
 public interface IWeatherData
 {
     Task<WindyWeatherResponse?> GetRawForecastAsync(double lat, double lon);
-    
-    // Обработка данных: например, поиск максимального ветра на ближайшие 24 часа
-    Task<string> GetDrakeSummaryAsync();
+
+    Task<string> GetWeatherSummaryAsync(WeatherReportType type);
 }
