@@ -63,7 +63,7 @@ public class NotificationService : IMessageSender
                 await botClient.SendMessage(chatId, "Напиши /drake, чтобы узнать обстановку в проливе.");
                 break;
             case "/drake":
-                var drakeSummary = await _weatherData.GetDrakeSummaryAsync();
+                var drakeSummary = await _weatherData.GetWeatherSummaryAsync(Enum.WeatherReportType.Full);
                 await botClient.SendMessage(chatId, drakeSummary);
                 break;
             default:
