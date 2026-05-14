@@ -1,0 +1,7 @@
+﻿services:
+  weather_bot:
+    image: weather_bot
+    build:
+      context: .
+      dockerfile: Weather_Bot/Dockerfile
+

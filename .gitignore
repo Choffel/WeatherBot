@@ -1,0 +1,61 @@
+# Build results
+bin/
+obj/
+/packages/
+*.dll
+*.exe
+*.pdb
+
+# Rider IDE
+riderModule.iml
+/_ReSharper.Caches/
+.idea/
+*.sln.iml
+.vscode/
+
+# Visual Studio
+.vs/
+.vscode/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+appsettings.local.json
+appsettings.Development.json
+
+# Bot tokens and sensitive data
+config.json
+secrets.json
+token.txt
+
+# Logs
+logs/
+*.log
+*.logs
+
+# OS files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
