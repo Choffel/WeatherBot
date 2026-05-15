@@ -1,7 +1,9 @@
 ﻿using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using Weather_Bot.Contract;
+using Weather_Bot.Enum;
 
 namespace Weather_Bot.Service;
 
@@ -52,26 +54,43 @@ public class NotificationService : IMessageSender
     
     private async Task HandleUpdateAsync(ITelegramBotClient botClient, Telegram.Bot.Types.Update update, CancellationToken cancellationToken)
     {
+        
         if (update.Message is not { Text: { } messageText } message) return;
 
         var chatId = message.Chat.Id;
         
-        
         switch (messageText.ToLower())
         {
             case "/start":
-                await botClient.SendMessage(chatId, "Напиши /drake, чтобы узнать обстановку в проливе.");
+                await botClient.SendMessage(
+                    chatId: chatId,
+                    text: "Привет! Я погодный бот. Выберите регион:",
+                    replyMarkup: ReplyMarkups.GetDrakeKeyboard(),
+                    cancellationToken: cancellationToken);
                 break;
+            
             case "/drake":
-                var drakeSummary = await _weatherData.GetWeatherSummaryAsync(Enum.WeatherReportType.Full);
-                await botClient.SendMessage(chatId, drakeSummary);
-                break;
-            default:
-                await botClient.SendMessage(chatId, "я не понимаю эту команду. Попробуй /start или /drake.");
+                var report = await _weatherData.GetWeatherSummaryAsync(WeatherReportType.Full);
+                await botClient.SendMessage(chatId, report, cancellationToken: cancellationToken);
                 break;
         }
     }
     
+    private async Task HandleCallbackQueryAsync(ITelegramBotClient botClient, Telegram.Bot.Types.CallbackQuery callbackQuery, CancellationToken cancellationToken)
+    {
+        var chatId = callbackQuery.Message?.Chat.Id;
+        if (chatId == null) return;
+
+        string responseText = callbackQuery.Data switch
+        {
+            "report_wind" => await _weatherData.GetWeatherSummaryAsync(WeatherReportType.Wind),
+            "report_waves" => await _weatherData.GetWeatherSummaryAsync(WeatherReportType.Waves),
+            "report_full" => await _weatherData.GetWeatherSummaryAsync(WeatherReportType.Full),
+            _ => "Неизвестная команда"
+        };
+
+        await botClient.SendMessage(chatId.Value, responseText, cancellationToken: cancellationToken);
+    }
     
     private Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
