@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
-using Weather_Bot.Command;
 using Weather_Bot.Contract;
 using Weather_Bot.Service;
 
