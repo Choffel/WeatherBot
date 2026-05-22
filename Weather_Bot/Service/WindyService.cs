@@ -1,69 +1,103 @@
 ﻿using System.Net.Http.Json;
 using Weather_Bot.Contract;
 using Weather_Bot.DTOs;
-using Weather_Bot.Enum;
 
 namespace Weather_Bot.Service;
 
+/// <summary>
+/// Сервис для получения данных о погоде и волнах из API Windy
+/// </summary>
 public class WindyService : IWeatherData
 {
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
     private readonly string _baseUrl = "https://api.windy.com/api/point-forecast/v2";
-    private readonly IReportWeather _reportFormatter;
     
-    
-    public WindyService(HttpClient httpClient, IReportWeather reportFormatter)
+    public WindyService(HttpClient httpClient)
     {
-        _reportFormatter = reportFormatter;
         _httpClient = httpClient;
         _apiKey = Environment.GetEnvironmentVariable("WINDY_API_KEY") ?? string.Empty;
+        
+        if (string.IsNullOrWhiteSpace(_apiKey))
+            throw new InvalidOperationException("API ключ WINDY_API_KEY не задан");
     }
 
-
-    public async Task<WindyWeatherResponse?> GetRawForecastAsync(double lat, double lon)
+    /// <summary>
+    /// Получает данные о ветре для указанных координат
+    /// </summary>
+    public async Task<WindyWeatherResponse> GetWindAsync(double latitude, double longitude)
     {
-        var requestBody = new WindyPointRequest(
-            lat, 
-            lon, 
-            "gfs", 
-            new[] { "wind", "windGust", "pressure" }, 
-            new[] { "surface" }, 
-            _apiKey
+        var request = new WindyPointRequest(
+            lat: latitude,
+            lon: longitude,
+            model: "gfs",
+            parameters: new[] 
+            { 
+                "windGust",
+                "wind"
+            },
+            levels: new[] { "surface" },
+            key: _apiKey
         );
-        
-        var response = await _httpClient.PostAsJsonAsync(_baseUrl, requestBody);
-        
-        if (!response.IsSuccessStatusCode)
-        {
-            var errorContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"[Windy Error] Code: {response.StatusCode}");
-            Console.WriteLine($"[Windy Error] Detail: {errorContent}");
-            return null;
-        }
-        
-        if (response.IsSuccessStatusCode)
-        {
-            return await response.Content.ReadFromJsonAsync<WindyWeatherResponse>();
-        }
-        
-        return null;
+
+        Console.WriteLine(request);
+
+        return await PostWeatherRequestAsync(request);
     }
 
-    public async Task<string> GetWeatherSummaryAsync(WeatherReportType type)
+    /// <summary>
+    /// Получает данные о волнах для указанных координат /// </summary>
+    public async Task<WindyWeatherResponse> GetWaveAsync(double latitude, double longitude)
     {
-        string model = type == WeatherReportType.Waves ? "gfsWave" : "gfs";
-
-        var parameters = type switch
+        try
         {
-            WeatherReportType.Wind => new[] { "wind", "windGust" },
-            WeatherReportType.Waves => new[] { "waves", "swell1" },
-            WeatherReportType.Full => new[] { "wind", "windGust", "waves" },
-            _ => new[] { "wind" }
-        };
-        
-        var data = await GetRawForecastAsync(-58.4, -62.8);
-        
-        return  _reportFormatter.FormatReport(data, type);
+            var request = new WindyPointRequest(
+                lat: latitude,
+                lon: longitude,
+                model: "gfs",
+                parameters: new[] 
+                { 
+                    "waves"
+                },
+                levels: new[] { "surface" },
+                key: _apiKey
+            );
+            
+
+            
+            return await PostWeatherRequestAsync(request);
+
+        }
+        catch (Exception response)
+        {
+            Console.WriteLine($"❌ Ошибка при формировании запроса: {response.Message}");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Отправляет запрос к API Windy и получает ответ
+    /// </summary>
+    private async Task<WindyWeatherResponse> PostWeatherRequestAsync(WindyPointRequest request)
+    {
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync(_baseUrl, request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<WindyWeatherResponse>() 
+                    ?? new WindyWeatherResponse();
+            }
+
+            var errorContent = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(
+                $"Ошибка API Windy: {response.StatusCode}. {errorContent}");
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"❌ Ошибка при запросе к API: {ex.Message}");
+            throw;
+        }
     }
 }
