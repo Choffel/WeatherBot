@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 using Weather_Bot.Contract;
+using Weather_Bot.Extensions;
 using Weather_Bot.Service;
 
 namespace Weather_Bot;
@@ -16,7 +17,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddWeatherBotServices(this IServiceCollection services)
     {
         // Регистрация форматирования отчётов
-        services.AddSingleton<IReportWeather, Report>();
+        //  services.AddSingleton<IReportWeather, Report>();
         
         
         // Регистрация HTTP клиента для Windy API

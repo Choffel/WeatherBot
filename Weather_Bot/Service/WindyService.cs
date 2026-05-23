@@ -46,58 +46,23 @@ public class WindyService : IWeatherData
     }
 
     /// <summary>
-    /// Получает данные о волнах для указанных координат /// </summary>
-    public async Task<WindyWeatherResponse> GetWaveAsync(double latitude, double longitude)
-    {
-        try
-        {
-            var request = new WindyPointRequest(
-                lat: latitude,
-                lon: longitude,
-                model: "gfs",
-                parameters: new[] 
-                { 
-                    "waves"
-                },
-                levels: new[] { "surface" },
-                key: _apiKey
-            );
-            
-
-            
-            return await PostWeatherRequestAsync(request);
-
-        }
-        catch (Exception response)
-        {
-            Console.WriteLine($"❌ Ошибка при формировании запроса: {response.Message}");
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Отправляет запрос к API Windy и получает ответ
+    /// Отправляет POST-запрос к API Windy и возвращает десериализованный ответ
     /// </summary>
     private async Task<WindyWeatherResponse> PostWeatherRequestAsync(WindyPointRequest request)
     {
-        try
+        var response = await _httpClient.PostAsJsonAsync(_baseUrl, request);
+
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.PostAsJsonAsync(_baseUrl, request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                return await response.Content.ReadFromJsonAsync<WindyWeatherResponse>() 
-                    ?? new WindyWeatherResponse();
-            }
-
             var errorContent = await response.Content.ReadAsStringAsync();
-            throw new HttpRequestException(
-                $"Ошибка API Windy: {response.StatusCode}. {errorContent}");
+            throw new Exception($"Ошибка API Windy: {response.ReasonPhrase}. {errorContent}");
         }
-        catch (HttpRequestException ex)
-        {
-            Console.WriteLine($"❌ Ошибка при запросе к API: {ex.Message}");
-            throw;
-        }
+
+        var weatherData = await response.Content.ReadFromJsonAsync<WindyWeatherResponse>();
+
+        if (weatherData == null)
+            throw new Exception("Не удалось получить данные о погоде");
+
+        return weatherData;
     }
 }

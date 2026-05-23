@@ -34,13 +34,6 @@ public class NotificationService : IMessageSender
         return await _weatherData.GetWindAsync(latitude, longitude);
     }
 
-   
-    public async Task<WindyWeatherResponse> GetWaveAsync(double latitude, double longitude)
-    {
-        return await _weatherData.GetWaveAsync(latitude, longitude);
-    }
-
-    
     public async Task StartAsync()
     {
         using var cts = new CancellationTokenSource();
@@ -78,10 +71,6 @@ public class NotificationService : IMessageSender
             {
                 await SendWindReportAsync(update.Message.Chat.Id, cancellationToken);
             }
-            else if (update.Message?.Text == "/waves")
-            {
-                await SendWaveReportAsync(update.Message.Chat.Id, cancellationToken);
-            }
         }
         catch (Exception ex)
         {
@@ -95,9 +84,8 @@ public class NotificationService : IMessageSender
         try
         {
             var windData = await GetWindAsync(_latitude, _longitude);
-            var waveData = await GetWaveAsync(_latitude, _longitude);
 
-            var message = FormatWeatherReport(windData, waveData);
+            var message = FormatWeatherReport(windData);
             
             await _botClient.SendMessage(
                 chatId: chatId,
@@ -141,30 +129,6 @@ public class NotificationService : IMessageSender
         }
     }
 
-    private async Task SendWaveReportAsync(long chatId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            var waveData = await GetWaveAsync(_latitude, _longitude);
-            var message = FormatWaveReport(waveData);
-            
-            await _botClient.SendMessage(
-                chatId: chatId,
-                text: message,
-                parseMode: ParseMode.Html,
-                cancellationToken: cancellationToken
-            );
-        }
-        catch (Exception ex)
-        {
-            await _botClient.SendMessage(
-                chatId: chatId,
-                text: $"❌ Ошибка при получении данных о волнах: {ex.Message}",
-                cancellationToken: cancellationToken
-            );
-        }
-    }
-
     /// <summary>
     /// Обрабатывает ошибки при получении обновлений
     /// </summary>
@@ -177,7 +141,7 @@ public class NotificationService : IMessageSender
     /// <summary>
     /// Форматирует полный отчет о погоде
     /// </summary>
-    private string FormatWeatherReport(WindyWeatherResponse windData, WindyWeatherResponse waveData)
+    private string FormatWeatherReport(WindyWeatherResponse windData)
     {
         return $"""
             <b>🌍 Отчет о погоде</b>
@@ -185,9 +149,6 @@ public class NotificationService : IMessageSender
             
             <b>💨 Ветер:</b>
             {FormatWindData(windData)}
-            
-            <b>🌊 Волны:</b>
-            {FormatWaveData(waveData)}
             """;
     }
 
@@ -205,72 +166,40 @@ public class NotificationService : IMessageSender
     }
 
     /// <summary>
-    /// Форматирует отчет о волнах
-    /// </summary>
-    private string FormatWaveReport(WindyWeatherResponse data)
-    {
-        return $"""
-            <b>🌊 Отчет о волнах</b>
-            📍 Координаты: {_latitude}, {_longitude}
-            
-            {FormatWaveData(data)}
-            """;
-    }
-
-    /// <summary>
     /// Форматирует данные о ветре из ответа API
     /// </summary>
-private string FormatWindData(WindyWeatherResponse data)
+    private string FormatWindData(WindyWeatherResponse data)
     {
         var details = new List<string>();
-    
+
         if (data?.ExtraData != null &&
             data.ExtraData.TryGetValue("wind_u-surface", out var windUObj) &&
             data.ExtraData.TryGetValue("wind_v-surface", out var windVObj) &&
-            windUObj is JsonElement windUElement &&
-            windVObj is JsonElement windVElement &&
-            windUElement.TryGetDouble(out var windU) &&
-            windVElement.TryGetDouble(out var windV))
+            windUObj is JsonElement windUElement && windUElement.ValueKind == JsonValueKind.Array && windUElement.GetArrayLength() > 0 &&
+            windVObj is JsonElement windVElement && windVElement.ValueKind == JsonValueKind.Array && windVElement.GetArrayLength() > 0)
         {
+            // Получаем первое значение из массива
+            var windU = windUElement[0].GetDouble();
+            var windV = windVElement[0].GetDouble();
+
             // Рассчитываем скорость ветра в м/с
             var windSpeedMs = Math.Sqrt(Math.Pow(windU, 2) + Math.Pow(windV, 2));
             
             // Конвертируем в км/ч
             var windSpeedKmh = windSpeedMs * 3.6;
-    
+
             details.Add($"💨 Скорость: {windSpeedKmh:F1} км/ч ({windSpeedMs:F1} м/с)");
-    
+
             // Добавляем информацию о порывах, если она есть
             if (data.ExtraData.TryGetValue("windGust-surface", out var windGustObj) &&
-                windGustObj is JsonElement windGustElement &&
-                windGustElement.TryGetDouble(out var windGustMs))
+                windGustObj is JsonElement windGustElement && windGustElement.ValueKind == JsonValueKind.Array && windGustElement.GetArrayLength() > 0)
             {
+                var windGustMs = windGustElement[0].GetDouble();
                 var windGustKmh = windGustMs * 3.6;
                 details.Add($"🌪️ Порывы до: {windGustKmh:F1} км/ч ({windGustMs:F1} м/с)");
             }
         }
-    
+
         return details.Count > 0 ? string.Join("\n", details) : "Данные о ветре недоступны";
     }
-    
-
-    /// <summary>
-    /// Форматирует данные о волнах из ответа API
-    /// </summary>
-    private string FormatWaveData(WindyWeatherResponse data)
-    {
-        var details = new List<string>();
-        
-        if (data?.ExtraData != null)
-        {
-            if (data.ExtraData.TryGetValue("waves-surface", out var waves))
-                details.Add($"Высота волн: {waves}");
-            
-            if (data.ExtraData.TryGetValue("waveHeight-surface", out var waveHeight))
-                details.Add($"Высота волн (доп.): {waveHeight}");
-        }
-
-        return details.Count > 0 ? string.Join("\n", details) : "Данные недоступны";
-    }
-    
 }

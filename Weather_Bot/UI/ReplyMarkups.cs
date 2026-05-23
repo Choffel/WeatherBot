@@ -11,7 +11,6 @@ public static class ReplyMarkups
             new[] 
             {
                 InlineKeyboardButton.WithCallbackData("💨 Ветер", "report_wind"),
-                InlineKeyboardButton.WithCallbackData("🌊 Волны", "report_waves")
             },
             new[] { InlineKeyboardButton.WithCallbackData("📊 Полная сводка", "report_full") }
         });
