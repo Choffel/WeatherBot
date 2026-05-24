@@ -1,47 +1,49 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Quartz;
 using Telegram.Bot;
+using Weather_Bot.BackgroungTimeWorker;
 using Weather_Bot.Contract;
-using Weather_Bot.Extensions;
 using Weather_Bot.Service;
+using Weather_Bot.Handlers;
 
 namespace Weather_Bot;
 
-/// <summary>
-/// Расширение для регистрации сервисов приложения
-/// </summary>
 public static class ServiceCollectionExtensions
 {
-    /// <summary>
-    /// Добавляет сервисы Weather Bot
-    /// </summary>
     public static IServiceCollection AddWeatherBotServices(this IServiceCollection services)
     {
-        // Регистрация форматирования отчётов
-        //  services.AddSingleton<IReportWeather, Report>();
+        services.AddSingleton<ITelegramService, TelegramService>();
         
-        
-        // Регистрация HTTP клиента для Windy API
-        services.AddHttpClient<WindyService>();
-        
-        // Регистрация Telegram Bot клиента (ДОЛЖНО БЫТЬ ДО NotificationService!)
+        services.AddSingleton<HandlerUpdateAsync>();
+        services.AddSingleton<HandlerErrorAsync>();
+
         services.AddSingleton<ITelegramBotClient>(sp =>
         {
             var token = GetRequiredEnv("TELEGRAM_BOT_TOKEN");
             return new TelegramBotClient(token);
         });
-        
-        // Регистрация сервисов погоды
-        services.AddSingleton<IWeatherData>(sp => sp.GetRequiredService<WindyService>());
-        
-        // Регистрация сервиса уведомлений (требует ITelegramBotClient и IWeatherData)
-        services.AddSingleton<IMessageSender, NotificationService>();
-        
+
+        services.AddQuartz(q =>
+        {
+            q.UseMicrosoftDependencyInjectionJobFactory();
+
+            var jobKey = new JobKey("EveningTaskJob");
+
+            q.AddJob<EveningTaskJob>(opts => opts.WithIdentity(jobKey));
+
+            q.AddTrigger(opts => opts
+                .ForJob(jobKey)
+                .WithIdentity("EveningWeatherTrigger")
+                .WithCronSchedule("0 0 20 * * ?", x => x
+                    .InTimeZone(TimeZoneInfo.FindSystemTimeZoneById("Europe/Warsaw"))
+                ));
+        });
+
+        services.AddQuartzHostedService(opt => { opt.WaitForJobsToComplete = true; });
+
         return services;
     }
 
-    /// <summary>
-    /// Получает значение переменной окружения или выбрасывает исключение
-    /// </summary>
     private static string GetRequiredEnv(string name)
     {
         var value = Environment.GetEnvironmentVariable(name);

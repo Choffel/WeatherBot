@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Telegram.Bot;
 using Weather_Bot.Configuration;
 using Weather_Bot.Contract;
 using Weather_Bot.Service;
@@ -17,16 +18,14 @@ using IHost host = builder.Build();
 
 try
 {
-    var weatherData = host.Services.GetRequiredService<IWeatherData>();
-    var messageSender = host.Services.GetRequiredService<IMessageSender>();
+    var weatherData = host.Services.GetRequiredService<ITelegramBotClient>();
+    var messageSender = host.Services.GetRequiredService<IMeteoService>();
 
     // Запускаем приложение
     Console.WriteLine("🤖 Запуск Weather Bot...");
     
-    if (messageSender is NotificationService notificationService)
-    {
-        await notificationService.StartAsync();
-    }
+    if(messageSender is ITelegramService telegramService)
+        await telegramService.StartAsync();
 }
 catch (InvalidOperationException ex)
 {
