@@ -1,7 +1,13 @@
-﻿services:
+﻿version: '3.8'
+
+services:
   weather_bot:
+    container_name: weather_bot_app
     image: weather_bot
     build:
       context: .
       dockerfile: Weather_Bot/Dockerfile
-
+    restart: always
+    environment:
+      - TZ=Europe/Warsaw  # <--- Гарантирует, что внутри контейнера будут правильные 20:00 вечера
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} # Передаем токен из файла .env
