@@ -1,4 +1,12 @@
 ﻿FROM mcr.microsoft.com/dotnet/runtime:10.0 AS base
+# 🎯 Переключаемся на root, чтобы была возможность устанавливать системные пакеты
+USER root
+# Обновляем репозитории и ставим базу часовых поясов tzdata
+RUN apt-get update && apt-get install -y tzdata && rm -rf /var/lib/apt/lists/*
+# Устанавливаем часовой пояс по умолчанию для самого Linux-контейнера
+ENV TZ=Europe/Warsaw
+
+# Возвращаем стандартного безопасного не-root пользователя .NET 10
 USER $APP_UID
 WORKDIR /app
 
