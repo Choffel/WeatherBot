@@ -8,6 +8,18 @@ services:
       context: .
       dockerfile: Weather_Bot/Dockerfile
     restart: always
+    
+    # ЯВНО УКАЗЫВАЕМ ПУТЬ К ФАЙЛУ
+    env_file:
+      - .env  # Если лежит в той же папке, что и docker-compose.yml
+      # - ./Weather_Bot/.env # Раскомментируйте этот, если .env лежит внутри папки проекта
+    
     environment:
-      - TZ=Europe/Warsaw  # <--- Гарантирует, что внутри контейнера будут правильные 20:00 вечера
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN} # Передаем токен из файла .env
+      - TZ=Europe/Warsaw
+      - BotConfiguration__TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - BotConfiguration__TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - BotConfiguration__LATITUDE=${LATITUDE}
+      - BotConfiguration__LONGITUDE=${LONGITUDE}
+      - BotConfiguration__WINDY_API_KEY=${WINDY_API_KEY}
+      - BotConfiguration__LUBLIN_LATITUDE=${LATITUDE_LUBLIN}
+      - BotConfiguration__LUBLIN_LONGITUDE=${LONGITUDE_LUBLIN}
