@@ -1,31 +1,34 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Telegram.Bot;
 using Weather_Bot.Configuration;
 using Weather_Bot.Contract;
-using Weather_Bot.Service;
-using Weather_Bot; // Добавлено для использования AddWeatherBotServices
+using Weather_Bot;
+using Weather_Bot.Extensions; // Добавлено для использования AddWeatherBotServices
 
 // Загружаем переменные окружения из файла .env
 EnvironmentSetup.LoadDotEnv();
 
 var builder = Host.CreateApplicationBuilder(args);
 
+// Создаем конфигурацию
+var configuration = new ConfigurationBuilder()
+    .AddEnvironmentVariables()
+    .Build();
+
 // Регистрируем все сервисы приложения
-builder.Services.AddWeatherBotServices();
+builder.Services.AddWeatherBotServices(configuration);
 
 using IHost host = builder.Build();
 
 try
 {
-    var weatherData = host.Services.GetRequiredService<ITelegramBotClient>();
-    var messageSender = host.Services.GetRequiredService<IMeteoService>();
+    var telegramService = host.Services.GetRequiredService<ITelegramService>();
 
     // Запускаем приложение
     Console.WriteLine("🤖 Запуск Weather Bot...");
     
-    if(messageSender is ITelegramService telegramService)
-        await telegramService.StartAsync();
+    await telegramService.StartAsync();
 }
 catch (InvalidOperationException ex)
 {

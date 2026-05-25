@@ -1,7 +1,10 @@
-﻿using Telegram.Bot;
+﻿using Microsoft.Extensions.Options;
+using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
+using Weather_Bot.Configuration;
 using Weather_Bot.Contract;
+using Weather_Bot.Contract.Lublin;
 using Weather_Bot.DTOs.OpenMeteoDTOs;
 using Weather_Bot.Handlers;
 
@@ -11,6 +14,7 @@ public class TelegramService : ITelegramService
 {
     private readonly ITelegramBotClient _botClient;
     private readonly IMeteoService _meteoService;
+    private readonly ILublinWeather _lublinWeather;
 
     
     //handlers
@@ -19,84 +23,109 @@ public class TelegramService : ITelegramService
 
     private readonly long _chatId;
     
-    
-    //params 
-    private double Latitude => Environment.GetEnvironmentVariable("LATITUDE") != null
-        ? double.Parse(Environment.GetEnvironmentVariable("LATITUDE")!)
-        : throw new ArgumentNullException("LATITUDE environment variable is not set.");
-    
-    private double Longitude => Environment.GetEnvironmentVariable("LONGITUDE") != null
-        ? double.Parse(Environment.GetEnvironmentVariable("LONGITUDE")!)
-        : throw new ArgumentNullException("LONGITUDE environment variable is not set.");
-    
-    
+    private readonly BotConfiguration _config;
 
     public TelegramService(ITelegramBotClient botClient,
-        IMeteoService meteoService, HandlerErrorAsync handlerErrorAsync, HandlerUpdateAsync handlerUpdateAsync)
+        IMeteoService meteoService, HandlerErrorAsync handlerErrorAsync, HandlerUpdateAsync handlerUpdateAsync,
+        IOptions<BotConfiguration> botConfiguration, ILublinWeather lublinWeather)
     {
-        _chatId = Environment.GetEnvironmentVariable("TELEGRAM_CHAT_ID") != null
-            ? long.Parse(Environment.GetEnvironmentVariable("TELEGRAM_CHAT_ID")!)
-            : throw new ArgumentNullException("TELEGRAM_CHAT_ID environment variable is not set.");
+        _config = botConfiguration.Value;
+        
+        if (_config.TELEGRAM_CHAT_ID == 0)
+            throw new ArgumentNullException(nameof(BotConfiguration.TELEGRAM_CHAT_ID), "TELEGRAM_CHAT_ID не задан в конфигурации.");
+        
+        _chatId = _config.TELEGRAM_CHAT_ID;
         
         _botClient = botClient;
         _meteoService = meteoService;
         
         _handlerErrorAsync = handlerErrorAsync;
         _handlerUpdateAsync = handlerUpdateAsync;
+        
+        _lublinWeather = lublinWeather;
     }
 
 
-    // add parametrs 
-    public async Task StartAsync()
+    private readonly CancellationTokenSource _cts = new(); 
+    
+    public Task StartAsync()
     {
-         using var cts = new CancellationTokenSource();
-         
-         var receiverOptions = new ReceiverOptions
-         {
-             AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }
-         };
+        var receiverOptions = new ReceiverOptions
+        {
+            AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }
+        };
 
-         _botClient.StartReceiving(
-             updateHandler: _handlerUpdateAsync.HandleUpdateAsync,
-             errorHandler: _handlerErrorAsync.HandleErrorAsync ,
-             receiverOptions: receiverOptions,
-             cancellationToken: cts.Token
-         );
+        _botClient.StartReceiving(
+            updateHandler: _handlerUpdateAsync.HandleUpdateAsync,
+            errorHandler: _handlerErrorAsync.HandleErrorAsync,
+            receiverOptions: receiverOptions,
+            cancellationToken: _cts.Token
+        );
 
-         var botInfo = await _botClient.GetMe(cancellationToken: cts.Token);
-         
-         Console.WriteLine($"✅ Бот @{botInfo.Username} запущен. Нажмите Ctrl+C для выхода.");
-
-         await Task.Delay(Timeout.Infinite, cts.Token);
+        Console.WriteLine($"✅ Long Polling запущен успешно!");
+        return Task.CompletedTask;
     }
     
     
-    public async Task GetWindASync(double latitude, double longitude)
+    public async Task GetWindASync()
     {
-        var response = await _meteoService.GetWindAsync(latitude, longitude);
+        var response = await _meteoService.GetWindAsync();
 
         if (response == null)
         {
             Console.WriteLine("Failed to retrieve weather data.");
+            await _botClient.SendMessage(
+                chatId: _chatId,
+                text: "❌ Ошибка при получении данных о ветре."
+            );
             return;
         }
         
+        var current = response.Current;
         
-        string messageText = $"💨 *Сводка погоды по координатам:* {latitude}, {longitude}\n\n" +
-                             $"🔹 *Скорость ветра:* {CurrentWeatherData.WindSpeed} м/с\n" +
-                             $"🔹 *Порывы ветра:* {CurrentWeatherData.WindGusts} м/с\n" +
-                             $"🔹 *Направление:* {CurrentWeatherData.WindDirection}°\n" +
-                             $"🕒 *Время замера:* {CurrentWeatherData.Time}";
+        string messageText = $"💨 *Сводка погоды по координатам:* {_config.LATITUDE}, {_config.LONGITUDE}\n\n" +
+                             $"🔹 *Скорость ветра:* {current.WindSpeed} km/с\n" +
+                             $"🔹 *Порывы ветра:* {current.WindGusts} km/с\n" +
+                             $"🔹 *Направление:* {current.WindDirection}°\n" +
+                             $"🕒 *Время замера:* {current.Time}";
         
-        _botClient.SendMessage(
+        await _botClient.SendMessage(
             chatId: _chatId,
             text: messageText,
             parseMode: ParseMode.Markdown
         );
     }
 
-    public async  Task SendEveningReportAsync(double latitube, double longitube)
+    public async Task<OpenMeteoResponse> GetLublinWeatherAsync()
     {
-       await GetWindASync(latitube, longitube);
+        var response = await _lublinWeather.GetWindAndTempAsync();
+
+        if (response == null)
+        {
+            Console.WriteLine("Failed to retrieve weather data.");
+        }
+        
+        var current = response.Current;
+        
+        string messageText = $"💨 *Сводка погоды по координатам:* {_config.LUBLIN_LATITUDE}, {_config.LUBLIN_LONGITUDE}\n\n" +
+                            $"🔹 *Скорость ветра:* {current.WindSpeed} km/h\n" +
+                            $"🔹 *Порывы ветра:* {current.WindGusts} km/h\n" +
+                            $"🔹 *Направление:* {current.WindDirection}°\n" +
+                            $"🌡️ *Температура:* {current.Temperature}°C\n" +
+                            $"🕒 *Время замера:* {current.Time}";
+        
+        await _botClient.SendMessage(
+            chatId: _chatId,
+            text: messageText,
+            parseMode: ParseMode.Markdown
+        );
+        
+        return response;
     }
+
+    public async Task SendEveningReportAsync()
+    {
+       await GetWindASync();
+    }
+    
 }
