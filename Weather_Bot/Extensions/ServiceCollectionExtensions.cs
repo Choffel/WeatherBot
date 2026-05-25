@@ -17,23 +17,25 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddWeatherBotServices(this IServiceCollection services, IConfiguration configuration)
     {
         
-        // register bot configuration
         services.Configure<BotConfiguration>(configuration.GetSection(BotConfiguration.SectionName));
         
-        // регистрируем сервисы погоды
-        services.AddHttpClient<OpenMeteoService>();
         
-        services.AddSingleton(sp => sp.GetRequiredService<OpenMeteoService>());
+        services.AddHttpClient();
         
+       
+        services.AddSingleton<OpenMeteoService>();
         services.AddSingleton<IMeteoService>(sp => sp.GetRequiredService<OpenMeteoService>());
         services.AddSingleton<ILublinWeather>(sp => sp.GetRequiredService<OpenMeteoService>());
         
         
-        services.AddSingleton<ITelegramService, TelegramService>();
-        
-        services.AddSingleton<HandlerUpdateAsync>();
-        services.AddSingleton<HandlerErrorAsync>();
+        services.AddTransient<HandlerUpdateAsync>();
+        services.AddTransient<HandlerErrorAsync>();
 
+        
+        services.AddSingleton<TelegramService>();
+        services.AddSingleton<ITelegramService>(sp => sp.GetRequiredService<TelegramService>());
+
+        
         services.AddSingleton<ITelegramBotClient>(sp =>
         {
             var options = sp.GetRequiredService<IOptions<BotConfiguration>>();
@@ -41,12 +43,15 @@ public static class ServiceCollectionExtensions
             
             if (string.IsNullOrWhiteSpace(token))
                 throw new InvalidOperationException(
-                    $"❌ Ошибка конфигурации: TELEGRAM_BOT_TOKEN не задан. " +
-                    $"Проверьте файл .env в корне проекта.");
+                    "❌ Ошибка конфигурации: TELEGRAM_BOT_TOKEN не задан. " +
+                    "Проверьте файл .env в корне проекта.");
             
-            return new TelegramBotClient(token, httpClient: null);
+            
+            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            return new TelegramBotClient(token, httpClient);
         });
 
+        
         services.AddQuartz(q =>
         {
             var jobKey = new JobKey("EveningTaskJob");
@@ -61,6 +66,7 @@ public static class ServiceCollectionExtensions
                 ));
         });
 
+        
         services.AddQuartzHostedService(opt => { opt.WaitForJobsToComplete = true; });
 
         return services;

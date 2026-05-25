@@ -9,18 +9,18 @@ namespace Weather_Bot.Service;
 
 public class OpenMeteoService : IMeteoService, ILublinWeather
 {
-    private readonly HttpClient _httpClient;
+    private readonly IHttpClientFactory _httpClientFactory;
     private readonly BotConfiguration _config;
     
-    public OpenMeteoService(HttpClient httpClient, IOptions<BotConfiguration> botConfiguration)
+    
+    public OpenMeteoService(IHttpClientFactory httpClientFactory, IOptions<BotConfiguration> botConfiguration)
     {
         _config = botConfiguration.Value;
-        _httpClient = httpClient;
+        _httpClientFactory = httpClientFactory;
     }
     
     public async Task<OpenMeteoResponse?> GetWindAsync()
     {
-        
         string url = $"https://api.open-meteo.com/v1/forecast" +
                      $"?latitude={_config.LATITUDE}" +
                      $"&longitude={_config.LONGITUDE}" +
@@ -28,20 +28,24 @@ public class OpenMeteoService : IMeteoService, ILublinWeather
                      $"&wind_speed_unit=kmh";
 
         
+        var httpClient = _httpClientFactory.CreateClient();
         
-        var response = await _httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
+        var response = await httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
         return response;  
     }
     
-    public async  Task<OpenMeteoResponse?> GetWindAndTempAsync()
+    public async Task<OpenMeteoResponse?> GetWindAndTempAsync()
     {
-        string url =  $"https://api.open-meteo.com/v1/forecast" +
-                      $"?latitude={_config.LUBLIN_LATITUDE}" +  // Сначала Широта (Latitude)
-                      $"&longitude={_config.LUBLIN_LONGITUDE}" + // Затем Долгота (Longitude)
-                      $"&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
-                      $"&wind_speed_unit=kmh";
+        string url = $"https://api.open-meteo.com/v1/forecast" +
+                     $"?latitude={_config.LUBLIN_LATITUDE}" +  
+                     $"&longitude={_config.LUBLIN_LONGITUDE}" + 
+                     $"&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+                     $"&wind_speed_unit=kmh";
         
-        var response = await _httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
+        
+        var httpClient = _httpClientFactory.CreateClient();
+        
+        var response = await httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
         return response;
     }
 }
