@@ -1,20 +1,17 @@
-﻿version: '3.8'
-
-services:
-  weather_bot:
-    container_name: weather_bot_app
-    image: weather_bot
+﻿services:
+  weather_bot_app:
     build:
       context: .
       dockerfile: Weather_Bot/Dockerfile
+    container_name: weather_bot_app
     restart: always
-    
-    # ЯВНО УКАЗЫВАЕМ ПУТЬ К ФАЙЛУ
-    env_file:
-      - .env  # Если лежит в той же папке, что и docker-compose.yml
-      # - ./Weather_Bot/.env # Раскомментируйте этот, если .env лежит внутри папки проекта
-    
+    volumes:
+      - ./.env:/app/.env
+   
     environment:
+      - DOTNET_ENVIRONMENT=Production
+      - DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTIONS=1
+      - DOTNET_PRINT_TELEMETRY_MESSAGE=false
       - TZ=Europe/Warsaw
       - BotConfiguration__TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - BotConfiguration__TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
