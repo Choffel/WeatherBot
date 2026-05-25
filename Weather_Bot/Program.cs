@@ -1,42 +1,32 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Weather_Bot.Configuration;
+using Weather_Bot.Extensions; 
 using Weather_Bot.Contract;
-using Weather_Bot;
-using Weather_Bot.Extensions; // Добавлено для использования AddWeatherBotServices
-
-// Загружаем переменные окружения из файла .env
-EnvironmentSetup.LoadDotEnv();
-
-var builder = Host.CreateApplicationBuilder(args);
-
-// Создаем конфигурацию
-var configuration = new ConfigurationBuilder()
-    .AddEnvironmentVariables()
-    .Build();
-
-// Регистрируем все сервисы приложения
-builder.Services.AddWeatherBotServices(configuration);
-
-using IHost host = builder.Build();
 
 try
 {
-    var telegramService = host.Services.GetRequiredService<ITelegramService>();
+    Console.WriteLine("[DEBUG LOG] 1. Вход в точку старта приложения...");
+    EnvironmentSetup.LoadDotEnv();
 
-    // Запускаем приложение
-    Console.WriteLine("🤖 Запуск Weather Bot...");
+    var builder = Host.CreateApplicationBuilder(args);
+    builder.Services.AddWeatherBotServices(builder.Configuration);
+
+    using IHost host = builder.Build();
+    Console.WriteLine("[DEBUG LOG] 5. DI-контейнер успешно собран.");
+
     
+    Console.WriteLine("🛰️ [⚠️ СУПЕР-ТЕСТ] Принудительный ручной запуск Telegram Long Polling...");
+    var telegramService = host.Services.GetRequiredService<ITelegramService>();
     await telegramService.StartAsync();
-}
-catch (InvalidOperationException ex)
-{
-    Console.WriteLine($"❌ {ex.Message}");
-    Environment.Exit(1);
+    Console.WriteLine("🔥 [⚠️ СУПЕР-ТЕСТ] StartAsync успешно выполнен! Бот должен слушать сервера Telegram.");
+
+    Console.WriteLine("🤖 [Host] Запуск основного хоста приложений...");
+    await host.RunAsync();
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"❌ Непредвиденная ошибка: {ex.Message}");
+    Console.WriteLine($"💥 КРИТИЧЕСКАЯ ОШИБКА ПРИ СТАРТЕ ХОСТА: {ex.Message}");
+    Console.WriteLine(ex.StackTrace);
     Environment.Exit(1);
 }

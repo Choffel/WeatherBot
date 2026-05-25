@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
@@ -15,19 +16,22 @@ public class TelegramService : ITelegramService
     private readonly ITelegramBotClient _botClient;
     private readonly IMeteoService _meteoService;
     private readonly ILublinWeather _lublinWeather;
-
     
-    //handlers
     private readonly HandlerErrorAsync _handlerErrorAsync;
     private readonly HandlerUpdateAsync _handlerUpdateAsync;
+    private readonly IHostApplicationLifetime _appLifetime; 
 
     private readonly long _chatId;
-    
     private readonly BotConfiguration _config;
 
-    public TelegramService(ITelegramBotClient botClient,
-        IMeteoService meteoService, HandlerErrorAsync handlerErrorAsync, HandlerUpdateAsync handlerUpdateAsync,
-        IOptions<BotConfiguration> botConfiguration, ILublinWeather lublinWeather)
+    public TelegramService(
+        ITelegramBotClient botClient,
+        IMeteoService meteoService, 
+        HandlerErrorAsync handlerErrorAsync, 
+        HandlerUpdateAsync handlerUpdateAsync,
+        IOptions<BotConfiguration> botConfiguration, 
+        ILublinWeather lublinWeather,
+        IHostApplicationLifetime appLifetime) 
     {
         _config = botConfiguration.Value;
         
@@ -35,19 +39,14 @@ public class TelegramService : ITelegramService
             throw new ArgumentNullException(nameof(BotConfiguration.TELEGRAM_CHAT_ID), "TELEGRAM_CHAT_ID не задан в конфигурации.");
         
         _chatId = _config.TELEGRAM_CHAT_ID;
-        
         _botClient = botClient;
         _meteoService = meteoService;
-        
         _handlerErrorAsync = handlerErrorAsync;
         _handlerUpdateAsync = handlerUpdateAsync;
-        
         _lublinWeather = lublinWeather;
+        _appLifetime = appLifetime;
     }
 
-
-    private readonly CancellationTokenSource _cts = new(); 
-    
     public Task StartAsync()
     {
         var receiverOptions = new ReceiverOptions
@@ -55,70 +54,60 @@ public class TelegramService : ITelegramService
             AllowedUpdates = new[] { UpdateType.Message, UpdateType.CallbackQuery }
         };
 
+       
         _botClient.StartReceiving(
             updateHandler: _handlerUpdateAsync.HandleUpdateAsync,
             errorHandler: _handlerErrorAsync.HandleErrorAsync,
             receiverOptions: receiverOptions,
-            cancellationToken: _cts.Token
+            cancellationToken: _appLifetime.ApplicationStopping 
         );
 
-        Console.WriteLine($"✅ Long Polling запущен успешно!");
+        Console.WriteLine($"✅ [Telegram Bot] Long Polling успешно запущен и привязан к хосту!");
         return Task.CompletedTask;
     }
-    
     
     public async Task GetWindASync()
     {
         var response = await _meteoService.GetWindAsync();
 
-        if (response == null)
+        if (response?.Current == null)
         {
             Console.WriteLine("Failed to retrieve weather data.");
-            await _botClient.SendMessage(
-                chatId: _chatId,
-                text: "❌ Ошибка при получении данных о ветре."
-            );
+            await _botClient.SendMessage(chatId: _chatId, text: "❌ Ошибка при получении данных о ветре.");
             return;
         }
         
         var current = response.Current;
         
-        string messageText = $"💨 *Сводка погоды по координатам:* {_config.LATITUDE}, {_config.LONGITUDE}\n\n" +
-                             $"🔹 *Скорость ветра:* {current.WindSpeed} km/с\n" +
-                             $"🔹 *Порывы ветра:* {current.WindGusts} km/с\n" +
-                             $"🔹 *Направление:* {current.WindDirection}°\n" +
-                             $"🕒 *Время замера:* {current.Time}";
+        string messageText = $"💨 <b>Сводка погоды по координатам:</b> {_config.LATITUDE}, {_config.LONGITUDE}\n\n" +
+                             $"🔹 <b>Скорость ветра:</b> {current.WindSpeed} km/h\n" +
+                             $"🔹 <b>Порывы ветра:</b> {current.WindGusts} km/h\n" +
+                             $"🔹 <b>Направление:</b> {current.WindDirection}°\n" +
+                             $"🕒 <b>Время замера:</b> {current.Time}";
         
-        await _botClient.SendMessage(
-            chatId: _chatId,
-            text: messageText,
-            parseMode: ParseMode.Markdown
-        );
+        await _botClient.SendMessage(chatId: _chatId, text: messageText, parseMode: ParseMode.Html);
     }
 
-    public async Task<OpenMeteoResponse> GetLublinWeatherAsync()
+    public async Task<OpenMeteoResponse?> GetLublinWeatherAsync()
     {
         var response = await _lublinWeather.GetWindAndTempAsync();
 
-        if (response == null)
+        if (response?.Current == null)
         {
-            Console.WriteLine("Failed to retrieve weather data.");
+            Console.WriteLine("Failed to retrieve Lublin weather data.");
+            return response;
         }
         
         var current = response.Current;
         
-        string messageText = $"💨 *Сводка погоды по координатам:* {_config.LUBLIN_LATITUDE}, {_config.LUBLIN_LONGITUDE}\n\n" +
-                            $"🔹 *Скорость ветра:* {current.WindSpeed} km/h\n" +
-                            $"🔹 *Порывы ветра:* {current.WindGusts} km/h\n" +
-                            $"🔹 *Направление:* {current.WindDirection}°\n" +
-                            $"🌡️ *Температура:* {current.Temperature}°C\n" +
-                            $"🕒 *Время замера:* {current.Time}";
+        string messageText = $"💨 <b>Сводка погоды в Люблине:</b>\n\n" +
+                            $"🔹 <b>Скорость ветра:</b> {current.WindSpeed} km/h\n" +
+                            $"🔹 <b>Порывы ветра:</b> {current.WindGusts} km/h\n" +
+                            $"🔹 <b>Направление:</b> {current.WindDirection}°\n" +
+                            $"🌡️ <b>Температура:</b> {current.Temperature}°C\n" +
+                            $"🕒 <b>Время замера:</b> {current.Time}";
         
-        await _botClient.SendMessage(
-            chatId: _chatId,
-            text: messageText,
-            parseMode: ParseMode.Markdown
-        );
+        await _botClient.SendMessage(chatId: _chatId, text: messageText, parseMode: ParseMode.Html);
         
         return response;
     }
@@ -127,5 +116,4 @@ public class TelegramService : ITelegramService
     {
        await GetWindASync();
     }
-    
 }
