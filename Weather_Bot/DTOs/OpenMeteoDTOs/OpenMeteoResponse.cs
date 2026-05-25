@@ -11,5 +11,5 @@ public class OpenMeteoResponse
     public double Longitude { get; set; }
 
     [JsonPropertyName("current")]
-    public CurrentWeatherData Current { get; set; }
+    public required CurrentWeatherData Current { get; set; }
 }

@@ -2,20 +2,23 @@
 
 namespace Weather_Bot.DTOs.OpenMeteoDTOs;
 
-public  class CurrentWeatherData
+public class CurrentWeatherData
 {
     [JsonPropertyName("time")]
-    public static string Time { get; set; }
+    public required string Time { get; set; }
 
     // Скорость ветра
     [JsonPropertyName("wind_speed_10m")]
-    public static  double WindSpeed { get; set; }
+    public double WindSpeed { get; set; }
 
     // Направление ветра в градусах (0-360)
     [JsonPropertyName("wind_direction_10m")]
-    public static  int WindDirection { get; set; }
+    public int WindDirection { get; set; }
 
     // Порывы ветра
     [JsonPropertyName("wind_gusts_10m")]
-    public static double WindGusts { get; set; }
+    public double WindGusts { get; set; }
+    
+    [JsonPropertyName("temperature_2m")]
+    public double? Temperature { get; set; }
 }
