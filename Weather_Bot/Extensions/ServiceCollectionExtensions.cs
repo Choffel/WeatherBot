@@ -7,6 +7,7 @@ using Weather_Bot.BackgroungTimeWorker;
 using Weather_Bot.Configuration;
 using Weather_Bot.Contract;
 using Weather_Bot.Contract.Lublin;
+using Weather_Bot.Contract.NemoPoint;
 using Weather_Bot.Service;
 using Weather_Bot.Handlers;
 
@@ -26,6 +27,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<OpenMeteoService>();
         services.AddSingleton<IMeteoService>(sp => sp.GetRequiredService<OpenMeteoService>());
         services.AddSingleton<ILublinWeather>(sp => sp.GetRequiredService<OpenMeteoService>());
+        services.AddSingleton<INemoPoint>(sp => sp.GetRequiredService<OpenMeteoService>());
         
         
         services.AddTransient<HandlerUpdateAsync>();

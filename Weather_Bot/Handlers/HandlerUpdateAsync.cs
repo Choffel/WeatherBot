@@ -3,6 +3,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Weather_Bot.Contract;
 using Weather_Bot.Contract.Lublin;
+using Weather_Bot.Contract.NemoPoint;
 
 namespace Weather_Bot.Handlers;
 
@@ -10,9 +11,11 @@ public class HandlerUpdateAsync
 {
     private readonly IMeteoService _meteoService;
     private readonly ILublinWeather _lublinWeather;
+    private readonly INemoPoint _nemoPoint;
 
-    public HandlerUpdateAsync(IMeteoService meteoService, ILublinWeather lublinWeather)
+    public HandlerUpdateAsync(IMeteoService meteoService, ILublinWeather lublinWeather, INemoPoint nemoPoint)
     {
+        _nemoPoint = nemoPoint;
         _lublinWeather = lublinWeather;
         _meteoService = meteoService;
     }
@@ -120,8 +123,32 @@ public class HandlerUpdateAsync
                 return;
             }
 
-            // ЛОГ 3: Если пришла команда, которую бот не знает (например, просто "привет")
-            Console.WriteLine($"❓ [Handler] Неизвестная команда: {text}");
+            if (text == "/Nemo")
+            {
+                var response = await _nemoPoint.GetNemoPointWeatherAsync();
+
+                if (response?.Current == null)
+                {
+                    await botClient.SendMessage(
+                        chatId: message.Chat.Id,
+                        text: "❌ Не удалось получить данные о погоде в точке Nemo.",
+                        cancellationToken: cancellationToken
+                    );
+                    return;
+                }
+                
+                await botClient.SendMessage(
+                    chatId: message.Chat.Id,
+                    text: $"Погода в точке Nemo:\n" +
+                          $"💨 Скорость ветра: {response.Current.WindSpeed} km/h\n" +
+                          $"🌬 Порывы: {response.Current.WindGusts} km/h\n" +
+                          $"🌡️ Температура: {response.Current.Temperature}°C\n" +
+                          $"🧭 Направление: {response.Current.WindDirection}°\n" +
+                          $"🕒 Время: {response.Current.Time}",
+                    parseMode: ParseMode.Html,
+                    cancellationToken: cancellationToken
+                );
+            }
         }
         catch (Exception ex)
         {

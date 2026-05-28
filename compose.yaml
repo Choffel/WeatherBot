@@ -20,3 +20,5 @@
       - BotConfiguration__WINDY_API_KEY=${WINDY_API_KEY}
       - BotConfiguration__LUBLIN_LATITUDE=${LATITUDE_LUBLIN}
       - BotConfiguration__LUBLIN_LONGITUDE=${LONGITUDE_LUBLIN}
+      - BotConfiguration__NEMO_POINT_LATITUDE=${NEMO_POINT_LATITUDE}
+      - BotConfiguration__NEMO_POINT_LONGITUDE=${NEMO_POINT_LONGITUDE}
