@@ -1,0 +1,27 @@
+name: Deploy Telegram Bot
+
+on:
+  push:
+    branches: [ main ] # Сюда пиши ветку, из которой делать деплой (main или master)
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish .NET Application
+        run: |
+          dotnet publish -c Release -o ./publish
+
+      - name: Copy files to production directory
+        run: |
+          # Очищаем старую папку (кроме .env) и копируем новое обновление
+          rsync -av --exclude='.env' ./publish/ ~/action-runner/_work/Choffel-WeatherBot/Choffel-WeatherBot/
+
+      - name: Restart Telegram Bot Service
+        run: |
+          # Перезапускаем системную службу бота, чтобы подтянулся новый код
+          sudo systemctl restart telegram-bot.service
