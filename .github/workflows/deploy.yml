@@ -23,4 +23,4 @@ jobs:
 
       - name: Restart Telegram Bot Service
         run: |
-          sudo systemctl restart telegram-bot.service
+          sudo systemctl restart weatherbot.service
