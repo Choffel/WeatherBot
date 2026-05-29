@@ -42,15 +42,15 @@ public static class ServiceCollectionExtensions
         {
             var options = sp.GetRequiredService<IOptions<BotConfiguration>>();
             var token = options.Value.TELEGRAM_BOT_TOKEN;
-            
+    
             if (string.IsNullOrWhiteSpace(token))
                 throw new InvalidOperationException(
                     "❌ Ошибка конфигурации: TELEGRAM_BOT_TOKEN не задан. " +
                     "Проверьте файл .env в корне проекта.");
-            
-            
-            var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            return new TelegramBotClient(token, httpClient);
+    
+            // Создаем клиент и даем ему 1 минуту на ожидание Long Polling
+            var httpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(1) };
+            return new TelegramBotClient(token, httpClient); 
         });
 
         
