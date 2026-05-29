@@ -2,7 +2,7 @@ name: Deploy Telegram Bot
 
 on:
   push:
-    branches: [ main ] # Сюда пиши ветку, из которой делать деплой (main или master)
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -18,10 +18,9 @@ jobs:
 
       - name: Copy files to production directory
         run: |
-          # Очищаем старую папку (кроме .env) и копируем новое обновление
+          mkdir -p ~/action-runner/_work/Choffel-WeatherBot/Choffel-WeatherBot/
           rsync -av --exclude='.env' ./publish/ ~/action-runner/_work/Choffel-WeatherBot/Choffel-WeatherBot/
 
       - name: Restart Telegram Bot Service
         run: |
-          # Перезапускаем системную службу бота, чтобы подтянулся новый код
           sudo systemctl restart telegram-bot.service
