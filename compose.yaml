@@ -6,12 +6,9 @@
     container_name: weather_bot_app
     restart: always
     
-    # 1. Указываем compose читать переменные из этого файла
+    
     env_file:
       - .env
-
-    volumes:
-      - ./.env:/app/.env
     
     environment:
       - DOTNET_ENVIRONMENT=Production
@@ -26,4 +23,4 @@
       - BotConfiguration__LUBLIN_LATITUDE=${LATITUDE_LUBLIN}
       - BotConfiguration__LUBLIN_LONGITUDE=${LONGITUDE_LUBLIN}
       - BotConfiguration__NEMO_POINT_LATITUDE=${NEMO_POINT_LATITUDE}
-      - BotConfiguration__NEMO_POINT_LONGITUDE=${NEMO_POINT_LONGITUDE}ITUDE}
+      - BotConfiguration__NEMO_POINT_LONGITUDE=${NEMO_POINT_LONGITUDE}
