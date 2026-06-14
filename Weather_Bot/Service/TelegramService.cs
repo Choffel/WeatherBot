@@ -5,9 +5,12 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types.Enums;
 using Weather_Bot.Configuration;
 using Weather_Bot.Contract;
+using Weather_Bot.Contract.Iss;
 using Weather_Bot.Contract.Lublin;
+using Weather_Bot.DTOs.IssDTO;
 using Weather_Bot.DTOs.OpenMeteoDTOs;
 using Weather_Bot.Handlers;
+using Weather_Bot.Formatters;
 
 namespace Weather_Bot.Service;
 
@@ -16,22 +19,26 @@ public class TelegramService : ITelegramService
     private readonly ITelegramBotClient _botClient;
     private readonly IMeteoService _meteoService;
     private readonly ILublinWeather _lublinWeather;
+    private readonly ISatelliteStateService _satelliteStateService;
     
     private readonly HandlerErrorAsync _handlerErrorAsync;
     private readonly HandlerUpdateAsync _handlerUpdateAsync;
-    private readonly IHostApplicationLifetime _appLifetime; 
+    private readonly IHostApplicationLifetime _appLifetime;
+    private readonly WeatherMessageFormatter _messageFormatter;
 
     private readonly long _chatId;
     private readonly BotConfiguration _config;
 
     public TelegramService(
+        ISatelliteStateService satelliteStateService,
         ITelegramBotClient botClient,
         IMeteoService meteoService, 
         HandlerErrorAsync handlerErrorAsync, 
         HandlerUpdateAsync handlerUpdateAsync,
         IOptions<BotConfiguration> botConfiguration, 
         ILublinWeather lublinWeather,
-        IHostApplicationLifetime appLifetime) 
+        IHostApplicationLifetime appLifetime,
+        WeatherMessageFormatter messageFormatter) 
     {
         _config = botConfiguration.Value;
         
@@ -44,7 +51,9 @@ public class TelegramService : ITelegramService
         _handlerErrorAsync = handlerErrorAsync;
         _handlerUpdateAsync = handlerUpdateAsync;
         _lublinWeather = lublinWeather;
+        _satelliteStateService = satelliteStateService;
         _appLifetime = appLifetime;
+        _messageFormatter = messageFormatter;
     }
 
     public Task StartAsync()
@@ -77,13 +86,11 @@ public class TelegramService : ITelegramService
             return;
         }
         
-        var current = response.Current;
-        
-        string messageText = $"💨 <b>Сводка погоды по координатам:</b> {_config.LATITUDE}, {_config.LONGITUDE}\n\n" +
-                             $"🔹 <b>Скорость ветра:</b> {current.WindSpeed} km/h\n" +
-                             $"🔹 <b>Порывы ветра:</b> {current.WindGusts} km/h\n" +
-                             $"🔹 <b>Направление:</b> {current.WindDirection}°\n" +
-                             $"🕒 <b>Время замера:</b> {current.Time}";
+        var messageText = _messageFormatter.FormatWeatherWithCoordinatesMessage(
+            response.Current,
+            _config.LATITUDE,
+            _config.LONGITUDE
+        );
         
         await _botClient.SendMessage(chatId: _chatId, text: messageText, parseMode: ParseMode.Html);
     }
@@ -98,19 +105,63 @@ public class TelegramService : ITelegramService
             return response;
         }
         
-        var current = response.Current;
-        
-        string messageText = $"💨 <b>Сводка погоды в Люблине:</b>\n\n" +
-                            $"🔹 <b>Скорость ветра:</b> {current.WindSpeed} km/h\n" +
-                            $"🔹 <b>Порывы ветра:</b> {current.WindGusts} km/h\n" +
-                            $"🔹 <b>Направление:</b> {current.WindDirection}°\n" +
-                            $"🌡️ <b>Температура:</b> {current.Temperature}°C\n" +
-                            $"🕒 <b>Время замера:</b> {current.Time}";
+        var messageText = _messageFormatter.FormatWeatherWithCoordinatesMessage(
+            response.Current,
+            _config.LUBLIN_LATITUDE,
+            _config.LUBLIN_LONGITUDE,
+            "Люблине"
+        );
         
         await _botClient.SendMessage(chatId: _chatId, text: messageText, parseMode: ParseMode.Html);
         
         return response;
     }
+
+    public async Task GetWeatherUnderIss(long chatId, CancellationToken cancellationToken)
+    {
+        Console.WriteLine("🚀 [TelegramService] Запрашиваем координаты МКС из Redis...");
+        
+        var satelliteState = await _satelliteStateService.GetSatelliteStateAsync(cancellationToken);
+        
+        if (satelliteState == null)
+        {
+            Console.WriteLine("❌ [TelegramService] Не удалось получить данные из Redis.");
+            await _botClient.SendMessage(
+                chatId: chatId, 
+                text: "❌ Данные о местоположении МКС сейчас недоступны.", 
+                cancellationToken: cancellationToken
+            );
+            return;
+        }
+
+        double latitude = satelliteState.Latitude;
+        double longitude = satelliteState.Longitude;
+        
+        var response = await _meteoService.GetWeatherIssAsync(latitude, longitude);
+
+        if (response?.Current == null)
+        {
+            Console.WriteLine("❌ [TelegramService] OpenMeteo вернул null для координат МКС.");
+            await _botClient.SendMessage(
+                chatId: chatId, 
+                text: "❌ Не удалось получить данные о погоде под МКС.", 
+                cancellationToken: cancellationToken
+            );
+            return;
+        }
+        
+        var messageText = _messageFormatter.FormatIssWeatherMessage(response.Current, latitude, longitude);
+
+        await _botClient.SendMessage(
+            chatId: chatId,
+            text: messageText,
+            parseMode: ParseMode.Html,
+            cancellationToken: cancellationToken
+        );
+
+        Console.WriteLine("✅ [TelegramService] Ответ на /Iss успешно отправлен.");
+    }
+
 
     public async Task SendEveningReportAsync()
     {
