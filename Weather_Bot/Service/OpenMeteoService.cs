@@ -33,7 +33,21 @@ public class OpenMeteoService : IMeteoService, ILublinWeather
         var response = await httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
         return response;  
     }
-    
+
+    public Task<OpenMeteoResponse?> GetWeatherIssAsync(double latitude, double longitude)
+    {
+        string url = $"https://api.open-meteo.com/v1/forecast" +
+                     $"?latitude={latitude}" +
+                     $"&longitude={longitude}" +
+                     $"&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+                     $"&wind_speed_unit=kmh";
+
+        
+        var httpClient = _httpClientFactory.CreateClient();
+        
+        return httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
+    }
+
     public async Task<OpenMeteoResponse?> GetWindAndTempAsync()
     {
         string url = $"https://api.open-meteo.com/v1/forecast" +
