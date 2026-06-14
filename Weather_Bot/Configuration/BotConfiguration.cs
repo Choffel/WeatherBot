@@ -9,8 +9,8 @@
         public double LATITUDE { get; set; }
         public double LONGITUDE { get; set; }
         
-        public double LUBLIN_LATITUDE { get; set; }  // <-- ВСЕ ЗАГЛАВНЫЕ
-        public double LUBLIN_LONGITUDE { get; set; } // <-- ВСЕ ЗАГЛАВНЫЕ
+        public double LUBLIN_LATITUDE { get; set; }  
+        public double LUBLIN_LONGITUDE { get; set; } 
     }
 }
 
