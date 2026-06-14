@@ -119,47 +119,105 @@ public class TelegramService : ITelegramService
 
     public async Task GetWeatherUnderIss(long chatId, CancellationToken cancellationToken)
     {
-        Console.WriteLine("🚀 [TelegramService] Запрашиваем координаты МКС из Redis...");
-        
-        var satelliteState = await _satelliteStateService.GetSatelliteStateAsync(cancellationToken);
-        
-        if (satelliteState == null)
+        try
         {
-            Console.WriteLine("❌ [TelegramService] Не удалось получить данные из Redis.");
+            Console.WriteLine($"🚀 [TelegramService.GetWeatherUnderIss] СТАРТ. ChatId={chatId}");
+            
+            Console.WriteLine("📍 [TelegramService] Запрашиваем координаты МКС из Redis...");
+            var satelliteState = await _satelliteStateService.GetSatelliteStateAsync(cancellationToken);
+            
+            if (satelliteState == null)
+            {
+                Console.WriteLine("❌ [TelegramService] Ошибка: Не удалось получить координаты из Redis.");
+                await _botClient.SendMessage(
+                    chatId: chatId, 
+                    text: "❌ Данные о местоположении МКС сейчас недоступны.", 
+                    cancellationToken: cancellationToken
+                );
+                return;
+            }
+
+            double latitude = satelliteState.Latitude;
+            double longitude = satelliteState.Longitude;
+            Console.WriteLine($"✅ [TelegramService] Координаты получены: LAT={latitude:F4}, LON={longitude:F4}");
+            
+            Console.WriteLine("🌐 [TelegramService] Запрашиваем погоду от OpenMeteo...");
+            var response = await _meteoService.GetWeatherIssAsync(latitude, longitude);
+
+            if (response == null)
+            {
+                Console.WriteLine("❌ [TelegramService] OpenMeteo вернул null (response == null).");
+                await _botClient.SendMessage(
+                    chatId: chatId, 
+                    text: "❌ Ошибка получения погоды (response == null).", 
+                    cancellationToken: cancellationToken
+                );
+                return;
+            }
+
+            if (response.Current == null)
+            {
+                Console.WriteLine("❌ [TelegramService] Ошибка: response.Current == null.");
+                await _botClient.SendMessage(
+                    chatId: chatId, 
+                    text: "❌ Не удалось получить данные о погоде под МКС.", 
+                    cancellationToken: cancellationToken
+                );
+                return;
+            }
+            
+            Console.WriteLine($"✅ [TelegramService] Погода получена: Wind={response.Current.WindSpeed}km/h");
+            
+            Console.WriteLine("📝 [TelegramService] Форматируем сообщение...");
+            var messageText = _messageFormatter.FormatIssWeatherMessage(response.Current, latitude, longitude);
+            Console.WriteLine($"✅ [TelegramService] Сообщение отформатировано ({messageText.Length} символов)");
+
+            Console.WriteLine($"📤 [TelegramService] Отправляем сообщение в Telegram (chatId={chatId})...");
             await _botClient.SendMessage(
-                chatId: chatId, 
-                text: "❌ Данные о местоположении МКС сейчас недоступны.", 
+                chatId: chatId,
+                text: messageText,
+                parseMode: ParseMode.Html,
                 cancellationToken: cancellationToken
             );
-            return;
+
+            Console.WriteLine("✅✅✅ [TelegramService] СООБЩЕНИЕ УСПЕШНО ОТПРАВЛЕНО В TELEGRAM! ✅✅✅");
         }
-
-        double latitude = satelliteState.Latitude;
-        double longitude = satelliteState.Longitude;
-        
-        var response = await _meteoService.GetWeatherIssAsync(latitude, longitude);
-
-        if (response?.Current == null)
+        catch (OperationCanceledException)
         {
-            Console.WriteLine("❌ [TelegramService] OpenMeteo вернул null для координат МКС.");
-            await _botClient.SendMessage(
-                chatId: chatId, 
-                text: "❌ Не удалось получить данные о погоде под МКС.", 
-                cancellationToken: cancellationToken
-            );
-            return;
+            Console.WriteLine("⏹️ [TelegramService] Операция отменена (OperationCanceledException)");
         }
-        
-        var messageText = _messageFormatter.FormatIssWeatherMessage(response.Current, latitude, longitude);
-
-        await _botClient.SendMessage(
-            chatId: chatId,
-            text: messageText,
-            parseMode: ParseMode.Html,
-            cancellationToken: cancellationToken
-        );
-
-        Console.WriteLine("✅ [TelegramService] Ответ на /Iss успешно отправлен.");
+        catch (Telegram.Bot.Exceptions.ApiRequestException apiEx)
+        {
+            Console.WriteLine($"💥 [TelegramService] Ошибка API Telegram: {apiEx.ErrorCode} - {apiEx.Message}");
+            try
+            {
+                await _botClient.SendMessage(
+                    chatId: chatId, 
+                    text: $"❌ Ошибка Telegram API: {apiEx.Message}", 
+                    cancellationToken: cancellationToken
+                );
+            }
+            catch { }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"💥 [TelegramService] ИСКЛЮЧЕНИЕ: {ex.GetType().Name}");
+            Console.WriteLine($"   Сообщение: {ex.Message}");
+            Console.WriteLine($"   StackTrace: {ex.StackTrace}");
+            
+            try
+            {
+                await _botClient.SendMessage(
+                    chatId: chatId, 
+                    text: $"❌ Ошибка: {ex.Message}", 
+                    cancellationToken: cancellationToken
+                );
+            }
+            catch (Exception sendEx)
+            {
+                Console.WriteLine($"❌ [TelegramService] Не удалось отправить даже сообщение об ошибке: {sendEx.Message}");
+            }
+        }
     }
 
 
