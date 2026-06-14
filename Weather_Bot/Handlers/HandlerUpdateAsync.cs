@@ -14,17 +14,20 @@ public class HandlerUpdateAsync
     private readonly ILublinWeather _lublinWeather;
     private readonly ISatelliteStateService _satelliteStateService;
     private readonly WeatherMessageFormatter _messageFormatter;
+    private readonly ITelegramService _telegramService;
 
     public HandlerUpdateAsync(
         IMeteoService meteoService,
         ILublinWeather lublinWeather,
         ISatelliteStateService satelliteStateService,
-        WeatherMessageFormatter messageFormatter)
+        WeatherMessageFormatter messageFormatter,
+        ITelegramService telegramService)
     {
         _satelliteStateService = satelliteStateService;
         _lublinWeather = lublinWeather;
         _meteoService = meteoService;
         _messageFormatter = messageFormatter;
+        _telegramService = telegramService;
     }
 
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -124,7 +127,6 @@ public class HandlerUpdateAsync
             {
                 Console.WriteLine("🚀 [Handler] Сработала команда /Iss. Запрашиваем координаты из Redis...");
 
-                
                 var satellitePosition = await _satelliteStateService.GetSatelliteStateAsync(cancellationToken);
 
                 if (satellitePosition == null)
@@ -137,11 +139,12 @@ public class HandlerUpdateAsync
                     );
                     return;
                 }
-                Console.WriteLine("✅ [Handler] Ответ на /Iss успешно отправлен.");
+                
+                Console.WriteLine("✅ [Handler] Координаты МКС получены. Запрашиваем погоду под МКС...");
+                await _telegramService.GetWeatherUnderIss(message.Chat.Id, cancellationToken);
                 return;
             }
-
-            // ЛОГ 3: Если пришла команда, которую бот не знает (например, просто "привет")
+            
             Console.WriteLine($"❓ [Handler] Неизвестная команда: {text}");
         }
         catch (Exception ex)
