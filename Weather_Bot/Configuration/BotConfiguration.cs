@@ -11,9 +11,6 @@
         
         public double LUBLIN_LATITUDE { get; set; }  
         public double LUBLIN_LONGITUDE { get; set; } 
-        
-        public double NEMO_POINT_LATITUDE { get; set; }
-        public double NEMO_POINT_LONGITUDE { get; set; }
     }
 }
 

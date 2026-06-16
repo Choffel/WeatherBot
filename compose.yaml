@@ -5,16 +5,23 @@
       dockerfile: Weather_Bot/Dockerfile
     container_name: weather_bot_app
     restart: always
+    volumes:
+      - ./.env:/app/.env
     
     
-    env_file:
-      - .env
-    
+    networks:
+      - orbit_tracker_network
+
     environment:
       - DOTNET_ENVIRONMENT=Production
       - DOTNET_SYSTEM_CONSOLE_ALLOW_ANSI_COLOR_REDIRECTIONS=1
       - DOTNET_PRINT_TELEMETRY_MESSAGE=false
       - TZ=Europe/Warsaw
+      
+      # ТЕПЕРЬ ТУТ ИДЕАЛЬНО ТОЧНОЕ ИМЯ ХОСТА:
+      - Redis__Host=redis
+      - Redis__Port=6379
+
       - BotConfiguration__TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - BotConfiguration__TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
       - BotConfiguration__LATITUDE=${LATITUDE}
@@ -22,5 +29,9 @@
       - BotConfiguration__WINDY_API_KEY=${WINDY_API_KEY}
       - BotConfiguration__LUBLIN_LATITUDE=${LATITUDE_LUBLIN}
       - BotConfiguration__LUBLIN_LONGITUDE=${LONGITUDE_LUBLIN}
-      - BotConfiguration__NEMO_POINT_LATITUDE=${NEMO_POINT_LATITUDE}
-      - BotConfiguration__NEMO_POINT_LONGITUDE=${NEMO_POINT_LONGITUDE}
+
+
+networks:
+  orbit_tracker_network:
+    external: true
+    name: orbittracker_default

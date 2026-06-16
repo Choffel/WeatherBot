@@ -2,8 +2,9 @@
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Weather_Bot.Contract;
+using Weather_Bot.Contract.Iss;
 using Weather_Bot.Contract.Lublin;
-using Weather_Bot.Contract.NemoPoint;
+using Weather_Bot.Formatters;
 
 namespace Weather_Bot.Handlers;
 
@@ -11,13 +12,22 @@ public class HandlerUpdateAsync
 {
     private readonly IMeteoService _meteoService;
     private readonly ILublinWeather _lublinWeather;
-    private readonly INemoPoint _nemoPoint;
+    private readonly ISatelliteStateService _satelliteStateService;
+    private readonly WeatherMessageFormatter _messageFormatter;
+    private readonly ITelegramService _telegramService;
 
-    public HandlerUpdateAsync(IMeteoService meteoService, ILublinWeather lublinWeather, INemoPoint nemoPoint)
+    public HandlerUpdateAsync(
+        IMeteoService meteoService,
+        ILublinWeather lublinWeather,
+        ISatelliteStateService satelliteStateService,
+        WeatherMessageFormatter messageFormatter,
+        ITelegramService telegramService)
     {
-        _nemoPoint = nemoPoint;
+        _satelliteStateService = satelliteStateService;
         _lublinWeather = lublinWeather;
         _meteoService = meteoService;
+        _messageFormatter = messageFormatter;
+        _telegramService = telegramService;
     }
 
     public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
@@ -72,12 +82,7 @@ public class HandlerUpdateAsync
                     return;
                 }
 
-                var current = response.Current;
-                var messageText =
-                    $"💨 <b>Скорость ветра:</b> {current.WindSpeed} km/h\n" +
-                    $"🌬 <b>Порывы:</b> {current.WindGusts} km/h\n" +
-                    $"🧭 <b>Направление:</b> {current.WindDirection}°\n" +
-                    $"🕒 <b>Время:</b> {current.Time}";
+                var messageText = _messageFormatter.FormatWindMessage(response.Current);
 
                 await botClient.SendMessage(
                     chatId: message.Chat.Id,
@@ -105,13 +110,7 @@ public class HandlerUpdateAsync
                     return;
                 } 
             
-                var current = response.Current;
-                var messageText =
-                    $"💨 <b>Скорость ветра:</b> {current.WindSpeed} km/h\n" +
-                    $"🌬 <b>Порывы:</b> {current.WindGusts} km/h\n" +
-                    $"🌡️ <b>Температура:</b> {current.Temperature}°C\n" + 
-                    $"🧭 <b>Направление:</b> {current.WindDirection}°\n" +
-                    $"🕒 <b>Время:</b> {current.Time}";
+                var messageText = _messageFormatter.FormatLublinWeatherMessage(response.Current);
 
                 await botClient.SendMessage(
                     chatId: message.Chat.Id,
@@ -123,32 +122,30 @@ public class HandlerUpdateAsync
                 return;
             }
 
-            if (text == "/Nemo")
-            {
-                var response = await _nemoPoint.GetNemoPointWeatherAsync();
 
-                if (response?.Current == null)
+            if (text == "/Iss")
+            {
+                Console.WriteLine("🚀 [Handler] Сработала команда /Iss. Запрашиваем координаты из Redis...");
+
+                var satellitePosition = await _satelliteStateService.GetSatelliteStateAsync(cancellationToken);
+
+                if (satellitePosition == null)
                 {
+                    Console.WriteLine("❌ [Handler] Ошибка: Не удалось получить координаты МКС из Redis.");
                     await botClient.SendMessage(
                         chatId: message.Chat.Id,
-                        text: "❌ Не удалось получить данные о погоде в точке Nemo.",
+                        text: "❌ Данные о местоположении МКС сейчас недоступны.",
                         cancellationToken: cancellationToken
                     );
                     return;
                 }
                 
-                await botClient.SendMessage(
-                    chatId: message.Chat.Id,
-                    text: $"Погода в точке Nemo:\n" +
-                          $"💨 Скорость ветра: {response.Current.WindSpeed} km/h\n" +
-                          $"🌬 Порывы: {response.Current.WindGusts} km/h\n" +
-                          $"🌡️ Температура: {response.Current.Temperature}°C\n" +
-                          $"🧭 Направление: {response.Current.WindDirection}°\n" +
-                          $"🕒 Время: {response.Current.Time}",
-                    parseMode: ParseMode.Html,
-                    cancellationToken: cancellationToken
-                );
+                Console.WriteLine("✅ [Handler] Координаты МКС получены. Запрашиваем погоду под МКС...");
+                await _telegramService.GetWeatherUnderIss(message.Chat.Id, cancellationToken);
+                return;
             }
+            
+            Console.WriteLine($"❓ [Handler] Неизвестная команда: {text}");
         }
         catch (Exception ex)
         {

@@ -1,4 +1,5 @@
-﻿using Weather_Bot.DTOs.OpenMeteoDTOs;
+﻿using Weather_Bot.DTOs.IssDTO;
+using Weather_Bot.DTOs.OpenMeteoDTOs;
 
 namespace Weather_Bot.Contract;
 
@@ -11,4 +12,6 @@ public interface ITelegramService
     Task SendEveningReportAsync();
 
     Task<OpenMeteoResponse> GetLublinWeatherAsync();
+     
+    Task GetWeatherUnderIss(long chatId, CancellationToken cancellationToken);
 }
