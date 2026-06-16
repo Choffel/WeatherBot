@@ -3,11 +3,12 @@ using Microsoft.Extensions.Options;
 using Weather_Bot.Configuration;
 using Weather_Bot.Contract;
 using Weather_Bot.Contract.Lublin;
+using Weather_Bot.Contract.NemoPoint;
 using Weather_Bot.DTOs.OpenMeteoDTOs;
 
 namespace Weather_Bot.Service;
 
-public class OpenMeteoService : IMeteoService, ILublinWeather
+public class OpenMeteoService : IMeteoService, ILublinWeather, INemoPoint
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly BotConfiguration _config;
@@ -60,6 +61,21 @@ public class OpenMeteoService : IMeteoService, ILublinWeather
         var httpClient = _httpClientFactory.CreateClient();
         
         var response = await httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
+        return response;
+    }
+
+    public Task<OpenMeteoResponse> GetNemoPointWeatherAsync()
+    {
+        string url = $"https://api.open-meteo.com/v1/forecast" +
+                     $"?latitude={_config.NEMO_POINT_LATITUDE}" +  
+                     $"&longitude={_config.NEMO_POINT_LONGITUDE}" + 
+                     $"&current=temperature_2m,wind_speed_10m,wind_direction_10m,wind_gusts_10m" +
+                     $"&wind_speed_unit=kmh";
+        
+        
+        var httpClient = _httpClientFactory.CreateClient();
+        
+        var response = httpClient.GetFromJsonAsync<OpenMeteoResponse>(url);
         return response;
     }
 }

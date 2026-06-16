@@ -8,7 +8,7 @@
     volumes:
       - ./.env:/app/.env
     
-    # Подключаем бота к общей сети с бэкендом orbittracker
+    
     networks:
       - orbit_tracker_network
 
@@ -30,7 +30,7 @@
       - BotConfiguration__LUBLIN_LATITUDE=${LATITUDE_LUBLIN}
       - BotConfiguration__LUBLIN_LONGITUDE=${LONGITUDE_LUBLIN}
 
-# Внешняя сеть для связи между контейнерами разных проектов
+
 networks:
   orbit_tracker_network:
     external: true

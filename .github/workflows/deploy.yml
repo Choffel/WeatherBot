@@ -1,0 +1,26 @@
+name: Deploy Telegram Bot
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Publish .NET Application
+        run: |
+          dotnet publish -c Release -o ./publish
+
+      - name: Copy files to production directory
+        run: |
+          mkdir -p ~/action-runner/_work/Choffel-WeatherBot/Choffel-WeatherBot/
+          rsync -av --exclude='.env' ./publish/ ~/action-runner/_work/Choffel-WeatherBot/Choffel-WeatherBot/
+
+      - name: Restart Telegram Bot Service
+        run: |
+          sudo systemctl restart weatherbot.service

@@ -9,6 +9,7 @@ using Weather_Bot.Configuration;
 using Weather_Bot.Contract;
 using Weather_Bot.Contract.Iss;
 using Weather_Bot.Contract.Lublin;
+using Weather_Bot.Contract.NemoPoint;
 using Weather_Bot.Service;
 using Weather_Bot.Handlers;
 using Weather_Bot.Formatters;
@@ -19,32 +20,32 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddWeatherBotServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // 1. Конфигурация бота
+        
         services.Configure<BotConfiguration>(configuration.GetSection(BotConfiguration.SectionName));
         
-        // 2. HTTP клиент
+        
         services.AddHttpClient();
         
-        // 3. Форматирование сообщений
+        
         services.AddSingleton<WeatherMessageFormatter>();
         
-        // 4. Сервисы погоды
+        
         services.AddSingleton<OpenMeteoService>();
         services.AddSingleton<IMeteoService>(sp => sp.GetRequiredService<OpenMeteoService>());
         services.AddSingleton<ILublinWeather>(sp => sp.GetRequiredService<OpenMeteoService>());
+        services.AddSingleton<INemoPoint>(sp => sp.GetRequiredService<OpenMeteoService>());
         
-        // 5. Обработчики Telegram-событий
         services.AddTransient<HandlerUpdateAsync>();
         services.AddTransient<HandlerErrorAsync>();
 
-        // 6. Основной сервис Telegram
+       
         services.AddSingleton<TelegramService>();
         services.AddSingleton<ITelegramService>(sp => sp.GetRequiredService<TelegramService>());
         
-        // 7. Сервис состояния спутника
+        
         services.AddTransient<ISatelliteStateService, SatelliteStateService>();
         
-        // 8. Подключение к Redis (Теперь скобки закрываются строго здесь!)
+        
         services.AddSingleton<IConnectionMultiplexer>(sp => 
         {
             var host = configuration["Redis:Host"] 
@@ -70,13 +71,13 @@ public static class ServiceCollectionExtensions
         
         services.AddTransient<Weather_Bot.Redis.ICacheService, Weather_Bot.Redis.CacheService>();
 
-        // 10. Клиент Telegram Bot
+        
         services.AddSingleton<ITelegramBotClient>(sp =>
         {
             var options = sp.GetRequiredService<IOptions<BotConfiguration>>();
             var token = options.Value.TELEGRAM_BOT_TOKEN;
             
-            // Если из секции пусто (локальный запуск), забираем плоский токен из корня
+            
             if (string.IsNullOrWhiteSpace(token))
             {
                 token = configuration["TELEGRAM_BOT_TOKEN"];
@@ -91,7 +92,7 @@ public static class ServiceCollectionExtensions
             return new TelegramBotClient(token, httpClient);
         });
 
-        // 11. Настройка планировщика Quartz
+       
         services.AddQuartz(q =>
         {
             var jobKey = new JobKey("EveningTaskJob");
@@ -106,7 +107,7 @@ public static class ServiceCollectionExtensions
                 ));
         });
 
-        // 12. Фоновый воркер для Quartz
+        
         services.AddQuartzHostedService(opt => { opt.WaitForJobsToComplete = true; });
 
         return services;
