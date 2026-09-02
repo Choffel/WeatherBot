@@ -1,0 +1,12 @@
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\bin\Debug\net10.0\Weather.Contracts.deps.json
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\bin\Debug\net10.0\Weather.Contracts.dll
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\bin\Debug\net10.0\Weather.Contracts.pdb
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\Weather.Contracts.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\Weather.Contracts.AssemblyInfoInputs.cache
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\Weather.Contracts.AssemblyInfo.cs
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\Weather.Contracts.csproj.CoreCompileInputs.cache
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\Weather.Contracts.sourcelink.json
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\Weather.Contracts.dll
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\refint\Weather.Contracts.dll
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\Weather.Contracts.pdb
+C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\Modules\Weather\Weather.Contracts\obj\Debug\net10.0\ref\Weather.Contracts.dll

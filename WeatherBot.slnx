@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Host/">
+    <Project Path="src/Host/WeatherBot.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Telegram/">
+    <Project Path="src/Modules/Telegram/Telegram.Contracts/Telegram.Contracts.csproj" />
+    <Project Path="src/Modules/Telegram/Telegram.Infrastructure/Telegram.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Weather/">
+    <Project Path="src/Modules/Weather/Weather.Contracts/Weather.Contracts.csproj" />
+    <Project Path="src/Modules/Weather/Weather.Infrastructure/Weather.Infrastructure.csproj" />
+  </Folder>
+</Solution>

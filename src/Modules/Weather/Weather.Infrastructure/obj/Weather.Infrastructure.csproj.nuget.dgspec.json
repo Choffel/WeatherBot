@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "c:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj": {}
+    "C:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj": {}
   },
   "projects": {
-    "c:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj": {
+    "C:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "c:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj",
+        "projectUniqueName": "C:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj",
         "projectName": "Weather.Infrastructure",
-        "projectPath": "c:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj",
+        "projectPath": "C:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\Weather.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\Asus\\.nuget\\packages\\",
-        "outputPath": "c:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\obj\\",
+        "outputPath": "C:\\Users\\Asus\\Desktop\\WeatherRefacotr\\WeatherBot\\src\\Modules\\Weather\\Weather.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Asus\\AppData\\Roaming\\NuGet\\NuGet.Config"

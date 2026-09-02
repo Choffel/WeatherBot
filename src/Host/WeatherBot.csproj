@@ -10,4 +10,16 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Modules\Weather\obj\project.assets.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\obj\project.packagespec.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\obj\Weather.csproj.nuget.dgspec.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\Weather.Contracts\obj\project.assets.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\Weather.Contracts\obj\project.packagespec.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\Weather.Contracts\obj\Weather.Contracts.csproj.nuget.dgspec.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\Weather.Infrastructure\obj\project.assets.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\Weather.Infrastructure\obj\project.packagespec.json" />
+    <_ContentIncludedByDefault Remove="Modules\Weather\Weather.Infrastructure\obj\Weather.Infrastructure.csproj.nuget.dgspec.json" />
+  </ItemGroup>
+
 </Project>
