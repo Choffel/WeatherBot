@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Telegram.Contracts")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9df6d7fcb9d15e38de2bb38249325934d904558f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cb5f58e739294a0afc537ed31ceb676be069bce2")]
 [assembly: System.Reflection.AssemblyProductAttribute("Telegram.Contracts")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Telegram.Contracts")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
