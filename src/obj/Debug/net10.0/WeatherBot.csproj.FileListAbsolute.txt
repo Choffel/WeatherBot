@@ -1,9 +1,0 @@
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.csproj.AssemblyReference.cache
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\rpswa.dswa.cache.json
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.AssemblyInfoInputs.cache
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.AssemblyInfo.cs
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.csproj.CoreCompileInputs.cache
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.MvcApplicationPartsAssemblyInfo.cs
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\Asus\Desktop\WeatherRefacotr\WeatherBot\src\obj\Debug\net10.0\WeatherBot.sourcelink.json
