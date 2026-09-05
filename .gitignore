@@ -10,6 +10,11 @@
 /queries/
 /dataSources/
 /dataSources.local.xml
+# Rider auto-generated & diagnostic files
+*.rider.project.model.nuget.info
+*.rider.project.restore.info
+*.dotTrace/
+*.dotMemory/
 
 ## Visual Studio & VS Code
 .vscode/
@@ -22,28 +27,40 @@
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+*.AssemblyInfolnputs.cache
+
+## Configuration & Secrets
 appsettings*.json
 !appsettings.json
 !appsettings.Development.json
+appsettings.Local.json
+.env
+*.env.json
+secrets.json
 
 ## User-specific files & Local settings
 *.rsuser
 *.suo
-*.user
 *.userprefs
 *.netcaches
 *.cache
+
+## Package Restore & Tooling
+*.nuget.props
+*.nuget.targets
+project.assets.json
+project.nuget.cache
+project.packagespec.json
+*.nuget.dgspec.json
+/packages/
 
 ## Publish & Deployment
 /publish/
 *.azurePubxml
 *.pubxml
 
-## Environment & Secrets
-.env
-*.env.json
-secrets.json
-
 ## OS Generated Files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+desktop.ini
